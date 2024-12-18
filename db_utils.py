@@ -26,18 +26,15 @@ class RDSDatabaseConnector():
             credentials (dict): A dictionary containing AWS RDS credentials.
                 Expected keys: ['host', 'port', 'user', 'password', 'database'].
         """
-        # Store the credentials as instance variables
+        # Store the credentials as variables
         self.host = credentials.get("RDS_HOST")
         self.port = credentials.get("RDS_PORT")
         self.user = credentials.get("RDS_USER")
         self.password = credentials.get("RDS_PASSWORD")
         self.database = credentials.get("RDS_DATABASE")
 
-        # Validation (optional but recommended)
         if not all([self.host, self.port, self.user, self.password, self.database]):
             raise ValueError("Missing one or more required database credentials.")
-        
-        print("RDSDatabaseConnector initialized successfully!")  # For testing purposes
 
     def engine(self):
         return create_engine(f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}")
