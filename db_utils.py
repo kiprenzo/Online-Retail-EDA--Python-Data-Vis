@@ -79,7 +79,8 @@ creds = get_creds()
 connector = RDSDatabaseConnector(creds)
 df = connector.extract_data('customer_activity')
 
-connector.download_csv(df, 'cust_act1')
+if __name__ == "__main__":
+    connector.download_csv(df, 'cust_act1')
 
 
 
