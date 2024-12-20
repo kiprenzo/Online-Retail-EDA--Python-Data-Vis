@@ -2,9 +2,14 @@ import yaml
 import os
 from sqlalchemy import create_engine
 import pandas as pd
+import numpy as np
 
 """
-Running this file will download the 'customer_activity' table as a .csv to your current directory, given you have access to the AWS db credentials.
+This file contains various classes for interacting with a database.
+    1. RDSDatabaseConnector(): Connecting to an AWS RDS database, extracting data from SQL DB to Pandas, downloading
+    to local .csv.
+    2. DataTransform(): Changing column datatypes
+    3. DataFrameInfo(): Summarizing and exploring tables
 """
 
 dtype_change = {
@@ -120,12 +125,12 @@ class DataTransform():
             except Exception as e:
                 print(f"Error changing '{column}' to {dtype}: {e}")
 
-class GetInfo():
+class DataFrameInfo():
     def __init__(self, df, df_column=None):
         self.df = df
         self.df_column = df_column if df_column is not None else df.columns
 
-    def unique(self):
+    def unique_count(self):
         """
         Prints the number of unique values in the specified column.
         """
@@ -139,6 +144,42 @@ class GetInfo():
             else:
                 print("This method works for a single column. Please pass one column only.")
 
+    def unique(self):
+        """
+        Prints the number of unique values in the specified column.
+        """
+        if self.df_column is None:
+            print("Please include a column argument to check for unique values.")
+        else:
+            if isinstance(self.df_column, str):
+                unique = set(self.df[self.df_column])
+                print(f"Here are the unique values in '{self.df_column}':")
+                return unique
+            else:
+                print("This method works for a single column. Please pass one column only.")
+
+    def null(self):
+        """
+        Calculates a count and percentage of null values in each column.
+        Returns a pd.DataFrame.
+        """
+        self.df = df
+        numnull = df.isna().sum()
+        percentnull = df.isna().sum() / len(df) * 100
+        null_df = pd.DataFrame({
+            'ColumnName': numnull.index,
+            'CountNull': numnull.values,
+            'PercentageNull': np.round(percentnull.values, 2)
+        })
+        return null_df
+
+    def range(self):
+        
+        dfcol = self.df_column
+        max = max(dfcol)
+        min = min(dfcol)
+        range = max - min
+        print(f"Range of column: {range} (max: {max}, min: {min})")
 
 
 
