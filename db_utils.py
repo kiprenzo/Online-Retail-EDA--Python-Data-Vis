@@ -7,6 +7,15 @@ import pandas as pd
 Running this file will download the 'customer_activity' table as a .csv to your current directory, given you have access to the AWS db credentials.
 """
 
+dtype_change = {
+    "visitor_type": "category",
+    "traffic_type": "category",
+    "region": "category",
+    "browser": "category",
+    "operating_systems": "category",
+    "month": "category",
+}
+
 def get_creds():
     """
     You must create a credentials.yaml file in your current directory with the login details to connect to the AWS db.
@@ -79,8 +88,62 @@ creds = get_creds()
 connector = RDSDatabaseConnector(creds)
 df = connector.extract_data('customer_activity')
 
-if __name__ == "__main__":
-    connector.download_csv(df, 'cust_act1')
+# if __name__ == "__main__":
+#     connector.download_csv(df, 'cust_act1')
+
+class DataTransform():
+    """
+    A class to transform the datatype of dataframe columns.
+
+    Attributes:
+        df (pd.DataFrame): The dataframe to work with.
+
+    Methods:
+        changetype(columns_dtypes): Changes the datatypes of columns specified in a dictionary:
+            Keys: columns, values: desired datatypes.
+    """
+    def __init__(self, df):
+        self.df = df
+
+    def changetype(self, columns_dtypes: dict):
+        """
+        Change the datatypes of specified columns in the dataframe.
+
+        Args:
+            columns_dtypes (dict): Dictionary with column names as keys and target datatypes as values.
+        """
+        for column, dtype in columns_dtypes.items():
+            try:
+                # Attempt to change the column's dtype
+                self.df[column] = self.df[column].astype(dtype)
+                print(f"Successfully changed '{column}' to {dtype}")
+            except Exception as e:
+                print(f"Error changing '{column}' to {dtype}: {e}")
+
+class GetInfo():
+    def __init__(self, df, df_column=None):
+        self.df = df
+        self.df_column = df_column if df_column is not None else df.columns
+
+    def unique(self):
+        """
+        Prints the number of unique values in the specified column.
+        """
+        if self.df_column is None:
+            print("Please include a column argument to check for unique values.")
+        else:
+            if isinstance(self.df_column, str):
+                unique_count = len(set(self.df[self.df_column]))
+                print(f"No. of unique values in '{self.df_column}': {unique_count}")
+                return unique_count
+            else:
+                print("This method works for a single column. Please pass one column only.")
+
+
+
+
+
+
 
 
 
