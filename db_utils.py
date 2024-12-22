@@ -3,6 +3,8 @@ import os
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 """
 This file contains various classes for interacting with a database.
@@ -180,6 +182,49 @@ class DataFrameInfo():
         min = min(dfcol)
         range = max - min
         print(f"Range of column: {range} (max: {max}, min: {min})")
+
+class Plotter():
+    def __init__(self, df):
+        self.df = df
+        
+    def correlation_map(self):
+        """
+        Generates a heatmap to visualize the correlations between numerical columns in the dataframe.
+        Non-numerical columns are ignored.
+        """
+        # Filter to numeric columns only
+        numeric_df = self.df.select_dtypes(include=['number'])
+
+        if numeric_df.empty:
+            print("No numeric columns found in the DataFrame to calculate correlations.")
+            return
+
+        # Calculate the correlation matrix
+        corr_matrix = numeric_df.corr()
+
+        # Set up the figure and aesthetic settings
+        plt.figure(figsize=(10, 8))
+        sns.set_theme(style="white")
+
+        # Create the heatmap
+        sns.heatmap(
+            corr_matrix,
+            annot=True,            # Show correlation coefficients
+            fmt=".2f",             # Format numbers to 2 decimal places
+            cmap="YlOrRd",       # Intuitive, aesthetically pleasing color palette
+            cbar=True,             # Show the color bar
+            square=True,           # Make the cells square
+            linewidths=0.5,        # Add lines between cells for clarity
+        )
+
+        # Add title and adjust layout
+        plt.title("Correlation Heatmap", fontsize=16)
+        plt.tight_layout()
+
+        # Show the plot
+        plt.show()
+
+
 
 
 
