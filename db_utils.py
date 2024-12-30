@@ -11,7 +11,7 @@ This file contains various classes for interacting with a database.
     1. RDSDatabaseConnector(): Connecting to an AWS RDS database, extracting data from SQL DB to Pandas, downloading
     to local .csv.
     2. DataTransform(): Changing column datatypes
-    3. DataFrameInfo(): Summarizing and exploring tables
+    3. DataFrameInfo(): Summarizing and exploring dataframes
 """
 
 dtype_change = {
@@ -32,8 +32,7 @@ def get_creds():
         data = yaml.safe_load(file)
     return data
 
-
-class RDSDatabaseConnector():
+class RDSDatabaseConnector:
     def __init__(self, credentials: dict):
         """
         Initialize the connector with credentials.
@@ -90,7 +89,6 @@ class RDSDatabaseConnector():
         print(f"Data saved to {full_path}")
         return full_path
 
-
 creds = get_creds()
 connector = RDSDatabaseConnector(creds)
 df = connector.extract_data('customer_activity')
@@ -98,7 +96,87 @@ df = connector.extract_data('customer_activity')
 # if __name__ == "__main__":
 #     connector.download_csv(df, 'cust_act1')
 
-class DataTransform():
+class DataFrameTransform:
+    def __init__(self, df, columns=None):
+        """
+        Initialize with a pandas DataFrame and optional columns to target.
+
+        Parameters:
+        - df (pd.DataFrame): The DataFrame to transform.
+        - columns (list or str, optional): Specific column(s) to target for transformations. 
+                                            If None, applies to all columns.
+        """
+        self.df = df
+        self.columns = columns if columns else df.columns
+
+    def impute_missing(self, strategy="mean"):
+        """
+        Impute missing values in the specified numeric columns with the mean or median.
+
+        Parameters:
+        - strategy (str): The imputation strategy ("mean" or "median").
+
+        Returns:
+        - The DataFrame with missing values imputed.
+        """
+        if strategy not in ["mean", "median"]:
+            raise ValueError("Strategy must be 'mean' or 'median'.")
+
+        # Filter numeric columns from the specified columns
+        numeric_cols = self.df[self.columns].select_dtypes(include=['int64', 'float64', 'Int32']).columns
+
+        if numeric_cols.empty:
+            print("No numeric columns found to impute.")
+            return self.df
+
+        # Perform imputation
+        for col in numeric_cols:
+            if self.df[col].isna().any():
+                if strategy == "mean":
+                    value = self.df[col].mean()
+                elif strategy == "median":
+                    value = self.df[col].median()
+
+                self.df[col].fillna(value, inplace=True)
+                print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}).")
+        
+        return self.df
+
+    def drop_missing(self):
+        """
+        Drop rows with missing values in the specified columns.
+
+        Returns:
+        - The DataFrame with rows containing missing values dropped.
+        """
+        if isinstance(self.columns, str):  # Ensure self.columns is always iterable
+            self.columns = [self.columns]
+
+        initial_shape = self.df.shape
+
+        # Drop rows where specified columns have missing values
+        self.df.dropna(subset=self.columns, inplace=True)
+
+        final_shape = self.df.shape
+        print(f"Dropped {initial_shape[0] - final_shape[0]} rows with missing values in {self.columns}.")
+        
+        return self.df
+
+    def replace(self, column, value_to_replace=None, replacement=''):
+        """
+        Replaces specified values in a column with a given replacement value.
+
+        Parameters:
+            column (str): The column to perform replacement on.
+            value_to_replace (optional): The value to be replaced (default is None, i.e., NaN).
+            replacement: The value to replace with (default is an empty string).
+        """
+        if column not in self.df.columns:
+            raise ValueError(f"Column '{column}' not found in the DataFrame.")
+
+        self.df[column] = self.df[column].replace(to_replace=value_to_replace, value=replacement)
+
+class DataTransform:
     """
     A class to transform the datatype of dataframe columns.
 
@@ -127,7 +205,7 @@ class DataTransform():
             except Exception as e:
                 print(f"Error changing '{column}' to {dtype}: {e}")
 
-class DataFrameInfo():
+class DataFrameInfo:
     def __init__(self, df, df_column=None):
         self.df = df
         self.df_column = df_column if df_column is not None else df.columns
@@ -141,7 +219,7 @@ class DataFrameInfo():
         else:
             if isinstance(self.df_column, str):
                 unique_count = len(set(self.df[self.df_column]))
-                print(f"No. of unique values in '{self.df_column}': {unique_count}")
+                print(f"No. of unique values in '{self.df_column}': {unique_count} ()")
                 return unique_count
             else:
                 print("This method works for a single column. Please pass one column only.")
@@ -156,6 +234,7 @@ class DataFrameInfo():
             if isinstance(self.df_column, str):
                 unique = set(self.df[self.df_column])
                 print(f"Here are the unique values in '{self.df_column}':")
+                print(unique)
                 return unique
             else:
                 print("This method works for a single column. Please pass one column only.")
@@ -174,6 +253,9 @@ class DataFrameInfo():
             'PercentageNull': np.round(percentnull.values, 2)
         })
         return null_df
+    
+    def nullpercent(self):
+
 
     def range(self):
         
@@ -183,10 +265,45 @@ class DataFrameInfo():
         range = max - min
         print(f"Range of column: {range} (max: {max}, min: {min})")
 
-class Plotter():
+class Plotter:
     def __init__(self, df):
         self.df = df
         
+    def numeric_distributions(self, bins=30):
+        """
+        Plots histograms for all numeric columns in the DataFrame.
+
+        Parameters:
+        - bins (int): Number of bins for the histograms.
+
+        Returns:
+        - A grid of histogram plots for all numeric columns.
+        """
+        # Automatically select numeric columns
+        numeric_cols = self.df.select_dtypes(include=['int64', 'float64', 'Int32']).columns
+
+        # Check if any numeric columns exist
+        if numeric_cols.empty:
+            print("No numeric columns found to plot.")
+            return
+
+        # Determine grid size (rows and columns)
+        n_cols = 3  # Number of plots per row
+        n_rows = (len(numeric_cols) + n_cols - 1) // n_cols  # Calculate required rows
+
+        plt.figure(figsize=(n_cols * 5, n_rows * 4))  # Adjust figure size
+
+        # Create a histogram for each numeric column
+        for i, col in enumerate(numeric_cols, 1):
+            plt.subplot(n_rows, n_cols, i)
+            sns.histplot(data=self.df, x=col, bins=bins, kde=True, color="skyblue")
+            plt.title(f"Histogram of '{col}'", fontsize=12)
+            plt.xlabel(col, fontsize=10)
+            plt.ylabel("Frequency", fontsize=10)
+
+        plt.tight_layout()
+        plt.show()
+
     def correlation_map(self):
         """
         Generates a heatmap to visualize the correlations between numerical columns in the dataframe.
