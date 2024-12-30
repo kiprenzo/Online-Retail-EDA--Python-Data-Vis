@@ -109,19 +109,16 @@ class DataFrameTransform:
         self.df = df
         self.columns = columns if columns else df.columns
 
-    def impute_missing(self, strategy="mean"):
+    def impute_missing(self):
         """
-        Impute missing values in the specified numeric columns with the mean or median.
+        Impute missing values in the specified numeric columns based on skewness.
 
-        Parameters:
-        - strategy (str): The imputation strategy ("mean" or "median").
+        If skewness > 1 or < -1, the median is used for imputation (to account for extreme skewness).
+        Otherwise, the mean is used.
 
         Returns:
         - The DataFrame with missing values imputed.
         """
-        if strategy not in ["mean", "median"]:
-            raise ValueError("Strategy must be 'mean' or 'median'.")
-
         # Filter numeric columns from the specified columns
         numeric_cols = self.df[self.columns].select_dtypes(include=['int64', 'float64', 'Int32']).columns
 
@@ -132,15 +129,25 @@ class DataFrameTransform:
         # Perform imputation
         for col in numeric_cols:
             if self.df[col].isna().any():
-                if strategy == "mean":
-                    value = self.df[col].mean()
-                elif strategy == "median":
+                skewness = self.df[col].skew()
+                if skewness > 1:
+                    strategy = "median"
                     value = self.df[col].median()
+                elif skewness < -1:
+                    strategy = "median"
+                    value = self.df[col].median()
+                else:
+                    strategy = "mean"
+                    value = self.df[col].mean()
 
+                print(f"Before imputation: {self.df[col].isna().sum()} nulls in '{col}'")
                 self.df[col].fillna(value, inplace=True)
-                print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}).")
+                print(f"After imputation: {self.df[col].isna().sum()} nulls in '{col}'")
+
+                print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}, skew={skewness:.2f}).")
         
         return self.df
+
 
     def drop_missing(self):
         """
@@ -204,6 +211,7 @@ class DataTransform:
                 print(f"Successfully changed '{column}' to {dtype}")
             except Exception as e:
                 print(f"Error changing '{column}' to {dtype}: {e}")
+        return self.df
 
 class DataFrameInfo:
     def __init__(self, df, df_column=None):
@@ -226,7 +234,7 @@ class DataFrameInfo:
 
     def unique(self):
         """
-        Prints the number of unique values in the specified column.
+        Prints the unique values in given column.
         """
         if self.df_column is None:
             print("Please include a column argument to check for unique values.")
@@ -255,7 +263,7 @@ class DataFrameInfo:
         return null_df
     
     def nullpercent(self):
-
+        pass
 
     def range(self):
         
