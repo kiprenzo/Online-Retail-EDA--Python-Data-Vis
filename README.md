@@ -9,7 +9,7 @@ The aim of this project is to hone my skills in EDA by working on a sample datab
     * making datatype conversions to save memory
     * imputing and/or dropping null values
     * normalizing/transforming data to reduce skewness
-    * removing outliers to reduce bias
+    * removing outliers to reduce biases
     * removing overly correlated columns
 
 All of the above is achieved using neatly constructed python classes and methods in `db_utils.py`.
