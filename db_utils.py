@@ -11,18 +11,14 @@ from sklearn.preprocessing import PowerTransformer
 This file contains various classes for interacting with a database.
     1. RDSDatabaseConnector(): Connecting to an AWS RDS database, extracting data from SQL DB to Pandas, downloading
     to local .csv.
-    2. DataTransform(): Changing column datatypes
-    3. DataFrameInfo(): Summarizing and exploring dataframes
+    2. DataTransform: Changing column datatypes
+    3. DataFrameInfo: Summarizing and exploring dataframes
+    4. DataFrameTransform: Imputing/dropping null/missing values, replacing values,
+       normalizing or removing outliers.
+    5. Plotter: various visualizations for 
+
 """
 
-dtype_change = {
-    "visitor_type": "category",
-    "traffic_type": "category",
-    "region": "category",
-    "browser": "category",
-    "operating_systems": "category",
-    "month": "category",
-}
 
 def get_creds():
     """
@@ -90,12 +86,12 @@ class RDSDatabaseConnector:
         print(f"Data saved to {full_path}")
         return full_path
 
-creds = get_creds()
+""" creds = get_creds()
 connector = RDSDatabaseConnector(creds)
 df = connector.extract_data('customer_activity')
 
-# if __name__ == "__main__":
-#     connector.download_csv(df, 'cust_act1')
+if __name__ == "__main__":
+     connector.download_csv(df, 'cust_act1') """
 
 class DataFrameTransform:
     def __init__(self, df, columns=None):
