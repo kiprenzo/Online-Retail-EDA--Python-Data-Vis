@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import PowerTransformer
 
 """
 This file contains various classes for interacting with a database.
@@ -109,12 +110,16 @@ class DataFrameTransform:
         self.df = df
         self.columns = columns if columns else df.columns
 
-    def impute_missing(self):
+    def impute_missing(self, strategy=None):
         """
-        Impute missing values in the specified numeric columns based on skewness.
+        Impute missing values in the specified numeric columns based on skewness or an explicitly provided strategy.
 
-        If skewness > 1 or < -1, the median is used for imputation (to account for extreme skewness).
-        Otherwise, the mean is used.
+        Parameters:
+        - strategy (str, optional): The imputation strategy. 
+            Options: "mean", "median", "mode". If None, the strategy is automatically selected based on skewness.
+            - For skewness > 1 or < -1, median is used.
+            - Otherwise, mean is used.
+            - Mode is applied only when explicitly set as the strategy.
 
         Returns:
         - The DataFrame with missing values imputed.
@@ -129,25 +134,28 @@ class DataFrameTransform:
         # Perform imputation
         for col in numeric_cols:
             if self.df[col].isna().any():
-                skewness = self.df[col].skew()
-                if skewness > 1:
-                    strategy = "median"
-                    value = self.df[col].median()
-                elif skewness < -1:
-                    strategy = "median"
-                    value = self.df[col].median()
+                if strategy == "mode":
+                    # Explicitly use mode
+                    mode_value = self.df[col].mode()[0]
+                    self.df[col].fillna(mode_value, inplace=True)
+                    print(f"Imputed missing values in '{col}' with mode ({mode_value}).")
                 else:
-                    strategy = "mean"
-                    value = self.df[col].mean()
+                    # Automatically choose mean/median based on skewness
+                    skewness = self.df[col].skew()
+                    if skewness > 1 or skewness < -1:
+                        strategy = "median"
+                        value = self.df[col].median()
+                    else:
+                        strategy = "mean"
+                        value = self.df[col].mean()
 
-                print(f"Before imputation: {self.df[col].isna().sum()} nulls in '{col}'")
-                self.df[col].fillna(value, inplace=True)
-                print(f"After imputation: {self.df[col].isna().sum()} nulls in '{col}'")
+                    print(f"Before imputation: {self.df[col].isna().sum()} nulls in '{col}'")
+                    self.df[col].fillna(value, inplace=True)
+                    print(f"After imputation: {self.df[col].isna().sum()} nulls in '{col}'")
 
-                print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}, skew={skewness:.2f}).")
+                    print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}, skew={skewness:.2f}).")
         
         return self.df
-
 
     def drop_missing(self):
         """
@@ -182,6 +190,67 @@ class DataFrameTransform:
             raise ValueError(f"Column '{column}' not found in the DataFrame.")
 
         self.df[column] = self.df[column].replace(to_replace=value_to_replace, value=replacement)
+
+    def reduce_skewness(self, method='log'):
+        """
+        Apply transformations to reduce skewness in numerical columns of a DataFrame.
+
+        Parameters:
+            df (pd.DataFrame): Input DataFrame
+            method (str): Transformation method - 'log', 'sqrt', 'reciprocal', or 'power'
+        
+        Returns:
+            pd.DataFrame: Transformed DataFrame
+        """
+        transformed_df = df.copy()
+        
+        for column in transformed_df.select_dtypes(include=[np.number]).columns:
+            # Skip columns with non-positive values for log and reciprocal transformations
+            if method in ['log', 'reciprocal'] and (transformed_df[column] <= 0).any():
+                continue
+            
+            if method == 'log':
+                transformed_df[column] = np.log1p(transformed_df[column])  # log1p handles 0 safely
+            elif method == 'sqrt':
+                transformed_df[column] = np.sqrt(transformed_df[column])
+            elif method == 'reciprocal':
+                transformed_df[column] = 1 / transformed_df[column]
+            elif method == 'power':
+                pt = PowerTransformer(method='yeo-johnson')
+                transformed_df[column] = pt.fit_transform(transformed_df[[column]])
+        
+        return transformed_df
+
+    def drop_outliers(self, z_threshold=3):
+        """
+        Drops rows with outliers based on Z-score for columns in self.columns.
+
+        Parameters:
+        - z_threshold (float): Z-score threshold for detecting outliers.
+
+        Returns:
+        - pd.DataFrame: A DataFrame with outliers removed.
+        """
+        if not self.columns:
+            print("No columns specified for outlier removal.")
+            return self.df
+
+        df_cleaned = self.df.copy()  # Create a copy to avoid modifying the original DataFrame
+
+        for col in self.columns:
+            if col not in self.df.columns:
+                print(f"Column '{col}' not found in the DataFrame. Skipping.")
+                continue
+
+            # Calculate Z-scores
+            mean = df_cleaned[col].mean()
+            std = df_cleaned[col].std()
+            z_scores = (df_cleaned[col] - mean) / std
+
+            # Remove rows where Z-score exceeds threshold
+            df_cleaned = df_cleaned[(z_scores <= z_threshold) & (z_scores >= -z_threshold)]
+
+        return df_cleaned
 
 class DataTransform:
     """
@@ -273,41 +342,134 @@ class DataFrameInfo:
         range = max - min
         print(f"Range of column: {range} (max: {max}, min: {min})")
 
+    def count_outliers(self, z_treshold=3):
+        """
+        Counts the number & percentage of outliers in each column using Z-score and IQR methods.
+
+        Parameters:
+        - df (pd.DataFrame): The input DataFrame.
+        - columns (list): List of column names to analyze for outliers.
+
+        Returns:
+        - pd.DataFrame: A summary DataFrame with counts & percentages of outliers for each column.
+        """
+        outlier_summary = {
+            "Column": [],
+            "Z-Score Outliers": [],
+            "Z Percentage": [],
+            "IQR Outliers": [],
+            "IQR Percentage": []
+        }
+
+        for col in self.df_column:
+            if col not in df.columns:
+                print(f"Column '{col}' not found in the DataFrame. Skipping.")
+                continue
+
+            # Drop NaN values for analysis
+            data = df[col].dropna()
+
+            # Z-score method
+            mean = data.mean()
+            std = data.std()
+            z_scores = (data - mean) / std
+            z_outliers = ((z_scores > z_treshold) | (z_scores < -z_treshold)).sum()
+            z_percentage = z_outliers / len(self.df) * 100
+
+            # IQR method
+            q1 = data.quantile(0.25)
+            q3 = data.quantile(0.75)
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+            iqr_outliers = ((data < lower_bound) | (data > upper_bound)).sum()
+            iqr_percentage = iqr_outliers / len(self.df) * 100
+
+            # Append results
+            outlier_summary["Column"].append(col)
+            outlier_summary["Z-Score Outliers"].append(z_outliers)
+            outlier_summary["Z Percentage"].append(z_percentage)
+            outlier_summary["IQR Outliers"].append(iqr_outliers)
+            outlier_summary["IQR Percentage"].append(iqr_percentage)
+            
+
+        # Convert to DataFrame
+        summary_df = pd.DataFrame(outlier_summary)
+        return summary_df
+
 class Plotter:
     def __init__(self, df):
         self.df = df
-        
-    def numeric_distributions(self, bins=30):
+
+    def numeric_distributions(self, bins=30, plot_type='hist', highlight_outliers=True, columns=None, z_threshold=3):
         """
-        Plots histograms for all numeric columns in the DataFrame.
+        Plots histograms or scatterplots for all numeric columns in the DataFrame,
+        with the option to highlight outliers in scatterplots based on Z-score.
 
         Parameters:
-        - bins (int): Number of bins for the histograms.
+        - bins (int): Number of bins for the histograms (applies only if plot_type='hist').
+        - plot_type (str): Type of plot - 'hist' for histograms (default), 'scatter' for scatterplots.
+        - columns (list): List of numeric columns to plot. If None, all numeric columns are plotted.
+        - z_threshold (float): Z-score threshold for detecting outliers (applies to scatterplots).
 
         Returns:
-        - A grid of histogram plots for all numeric columns.
+        - A grid of plots for the specified numeric columns.
         """
-        # Automatically select numeric columns
-        numeric_cols = self.df.select_dtypes(include=['int64', 'float64', 'Int32']).columns
+        # Automatically select numeric columns if none are specified
+        if columns is None:
+            columns = self.df.select_dtypes(include=['int64', 'float64', 'Int32']).columns
 
-        # Check if any numeric columns exist
-        if numeric_cols.empty:
+        # Ensure columns is a list and check if it's empty
+        if isinstance(columns, pd.Index):
+            columns = columns.tolist()
+
+        if len(columns) == 0:
             print("No numeric columns found to plot.")
             return
 
         # Determine grid size (rows and columns)
         n_cols = 3  # Number of plots per row
-        n_rows = (len(numeric_cols) + n_cols - 1) // n_cols  # Calculate required rows
+        n_rows = (len(columns) + n_cols - 1) // n_cols  # Calculate required rows
 
         plt.figure(figsize=(n_cols * 5, n_rows * 4))  # Adjust figure size
 
-        # Create a histogram for each numeric column
-        for i, col in enumerate(numeric_cols, 1):
+        # Create a plot for each numeric column
+        for i, col in enumerate(columns, 1):
+            if col not in self.df.columns:
+                print(f"Column '{col}' not found in the DataFrame. Skipping.")
+                continue
+
             plt.subplot(n_rows, n_cols, i)
-            sns.histplot(data=self.df, x=col, bins=bins, kde=True, color="skyblue")
-            plt.title(f"Histogram of '{col}'", fontsize=12)
-            plt.xlabel(col, fontsize=10)
-            plt.ylabel("Frequency", fontsize=10)
+
+            if plot_type == 'hist':
+                sns.histplot(data=self.df, x=col, bins=bins, kde=True, color="skyblue")
+                plt.title(f"Histogram of '{col}'", fontsize=12)
+                plt.xlabel(col, fontsize=10)
+                plt.ylabel("Frequency", fontsize=10)
+
+            elif plot_type == 'scatter':
+                # Drop NaN values for analysis
+                data = self.df[col].dropna()
+
+                # Calculate Z-scores
+                mean = data.mean()
+                std = data.std()
+                z_scores = (data - mean) / std
+
+                # Identify outliers (Z > z_threshold or Z < -z_threshold)
+                is_outlier = (z_scores > z_threshold) | (z_scores < -z_threshold)
+
+                # Plot normal points in blue and outliers in red
+                if highlight_outliers:
+                    plt.scatter(data.index, data, alpha=0.7, color="skyblue", label="Inliers")
+                    plt.scatter(data.index[is_outlier], data[is_outlier], alpha=0.7, color="red", label="Outliers")
+                else:
+                    plt.scatter(data.index, data, alpha=0.7, color="skyblue")
+
+                plt.title(f"Scatterplot of '{col}'", fontsize=12)
+                plt.xlabel("Index", fontsize=10)
+                plt.ylabel(col, fontsize=10)
+                plt.legend()
 
         plt.tight_layout()
         plt.show()
