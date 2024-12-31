@@ -198,7 +198,7 @@ class DataFrameTransform:
         Returns:
             pd.DataFrame: Transformed DataFrame
         """
-        transformed_df = df.copy()
+        transformed_df = self.df.copy()
         
         for column in transformed_df.select_dtypes(include=[np.number]).columns:
             # Skip columns with non-positive values for log and reciprocal transformations
@@ -317,7 +317,7 @@ class DataFrameInfo:
         Calculates a count and percentage of null values in each column.
         Returns a pd.DataFrame.
         """
-        self.df = df
+        df = self.df
         numnull = df.isna().sum()
         percentnull = df.isna().sum() / len(df) * 100
         null_df = pd.DataFrame({
@@ -358,12 +358,12 @@ class DataFrameInfo:
         }
 
         for col in self.df_column:
-            if col not in df.columns:
+            if col not in self.df.columns:
                 print(f"Column '{col}' not found in the DataFrame. Skipping.")
                 continue
 
             # Drop NaN values for analysis
-            data = df[col].dropna()
+            data = self.df[col].dropna()
 
             # Z-score method
             mean = data.mean()
@@ -457,10 +457,10 @@ class Plotter:
 
                 # Plot normal points in blue and outliers in red
                 if highlight_outliers:
-                    plt.scatter(data.index, data, alpha=0.7, color="skyblue", label="Inliers")
-                    plt.scatter(data.index[is_outlier], data[is_outlier], alpha=0.7, color="red", label="Outliers")
+                    plt.scatter(data.index, data, alpha=0.5, color="skyblue", label="Inliers")
+                    plt.scatter(data.index[is_outlier], data[is_outlier], alpha=0.5, color="red", label="Outliers")
                 else:
-                    plt.scatter(data.index, data, alpha=0.7, color="skyblue")
+                    plt.scatter(data.index, data, alpha=0.5, color="skyblue")
 
                 plt.title(f"Scatterplot of '{col}'", fontsize=12)
                 plt.xlabel("Index", fontsize=10)
@@ -494,8 +494,8 @@ class Plotter:
             corr_matrix,
             annot=True,            # Show correlation coefficients
             fmt=".2f",             # Format numbers to 2 decimal places
-            cmap="YlOrRd",       # Intuitive, aesthetically pleasing color palette
-            cbar=True,             # Show the color bar
+            cmap="YlOrRd",         # Intuitive colour palette
+            cbar=True,             # Show the colour bar
             square=True,           # Make the cells square
             linewidths=0.5,        # Add lines between cells for clarity
         )

@@ -16,7 +16,7 @@ All of the above is achieved using neatly constructed python classes and methods
 
 # Requirements
 
-**Important:** you must have the necessary credentials to connect to an AWS RDS db and store them in a `credentials.yaml` file in a dictionary format:
+**Important:** in order to use `RDSDatabaseConnector`, you must have the necessary credentials to connect to an AWS RDS db and store them in a `credentials.yaml` file in a dictionary format:
 > RDS_HOST: *host url*  
 > RDS_PASSWORD: *pw*  
 > RDS_USER: *user*  
