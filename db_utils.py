@@ -133,7 +133,7 @@ class DataFrameTransform:
                 if strategy == "mode":
                     # Explicitly use mode
                     mode_value = self.df[col].mode()[0]
-                    self.df[col].fillna(mode_value, inplace=True)
+                    self.df.fillna({col: mode_value}, inplace=True)
                     print(f"Imputed missing values in '{col}' with mode ({mode_value}).")
                 else:
                     # Automatically choose mean/median based on skewness
@@ -146,7 +146,7 @@ class DataFrameTransform:
                         value = self.df[col].mean()
 
                     print(f"Before imputation: {self.df[col].isna().sum()} nulls in '{col}'")
-                    self.df[col].fillna(value, inplace=True)
+                    self.df.fillna({col: value}, inplace=True)
                     print(f"After imputation: {self.df[col].isna().sum()} nulls in '{col}'")
 
                     print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}, skew={skewness:.2f}).")
