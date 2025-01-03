@@ -145,9 +145,7 @@ class DataFrameTransform:
                         strategy = "mean"
                         value = self.df[col].mean()
 
-                    print(f"Before imputation: {self.df[col].isna().sum()} nulls in '{col}'")
                     self.df.fillna({col: value}, inplace=True)
-                    print(f"After imputation: {self.df[col].isna().sum()} nulls in '{col}'")
 
                     print(f"Imputed missing values in '{col}' with {strategy} ({value:.2f}, skew={skewness:.2f}).")
         
@@ -273,9 +271,9 @@ class DataTransform:
             try:
                 # Attempt to change the column's dtype
                 self.df[column] = self.df[column].astype(dtype)
-                print(f"Successfully changed '{column}' to {dtype}")
+                print(f"✓ Successfully changed '{column}' to {dtype}")
             except Exception as e:
-                print(f"Error changing '{column}' to {dtype}: {e}")
+                print(f"X Error changing '{column}' to {dtype}: {e}")
         return self.df
 
 class DataFrameInfo:
