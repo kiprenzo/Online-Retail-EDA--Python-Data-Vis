@@ -14,7 +14,7 @@ The aim of this project is to hone my skills in EDA by working on a sample datab
 
 All of the above is achieved using neatly constructed python classes and methods in `db_utils.py`.
 
-# Requirements
+## Requirements
 
 **Important:** in order to use `RDSDatabaseConnector`, you must have the necessary credentials to connect to an AWS RDS db and store them in a `credentials.yaml` file in a dictionary format:
 > RDS_HOST: *host url*  
@@ -33,8 +33,19 @@ All of the above is achieved using neatly constructed python classes and methods
 - [scikit-learn](https://github.com/scikit-learn/scikit-learn) - run `pip install scikit-learn`
 - [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) - run `pip install sqlalchemy`
 
-# Usage
+## Usage
 
 `db_utils.py` has many reusable classes, useful for EDA.  
 --TODO expand
 
+## License
+ 
+The MIT License (MIT)
+
+Copyright (c) 2015 Chris Kibble
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
