@@ -1,5 +1,7 @@
 # Exploratory Data Analysis Exercise
 
+![Banner](eda_banner.gif)
+
 The aim of this project is to hone my skills in EDA by working on a sample database (retail website) end-to-end:
 
 * Establishing a connection with an AWS RDS with secure credentials
