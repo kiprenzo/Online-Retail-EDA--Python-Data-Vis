@@ -15,7 +15,8 @@ This file contains various classes for interacting with a database.
     3. DataFrameInfo: Summarizing and exploring dataframes
     4. DataFrameTransform: Imputing/dropping null/missing values, replacing values,
        normalizing or removing outliers.
-    5. Plotter: various visualizations for 
+    5. Plotter: gain quick insights into your dataset with a correlation-heatmap and a flexible
+       numeric distribution scatterplot/histogram chart.
 
 """
 
@@ -86,12 +87,15 @@ class RDSDatabaseConnector:
         print(f"Data saved to {full_path}")
         return full_path
 
+# Uncomment the below substring if you'd like to save a local version of your AWS RDS file.
+# Make sure you have your credentials.yaml file ready.
+
 """ creds = get_creds()
 connector = RDSDatabaseConnector(creds)
-df = connector.extract_data('customer_activity')
+df = connector.extract_data('YOUR_DESTINATION')
 
 if __name__ == "__main__":
-     connector.download_csv(df, 'cust_act1') """
+     connector.download_csv(df, 'YOUR_FILENAME.csv') """
 
 class DataFrameTransform:
     def __init__(self, df, columns=None):
@@ -134,7 +138,8 @@ class DataFrameTransform:
                     # Explicitly use mode
                     mode_value = self.df[col].mode()[0]
                     self.df.fillna({col: mode_value}, inplace=True)
-                    print(f"Imputed missing values in '{col}' with mode ({mode_value}).")
+                    skewness = self.df[col].skew()
+                    print(f"Imputed missing values in '{col}' with mode ({mode_value}, skew={skewness:.2f}).")
                 else:
                     # Automatically choose mean/median based on skewness
                     skewness = self.df[col].skew()
@@ -215,7 +220,7 @@ class DataFrameTransform:
         
         return transformed_df
 
-    def drop_outliers(self, z_threshold=3):
+    def drop_outliers(self, z_threshold: float = 3):
         """
         Drops rows with outliers based on Z-score for columns in self.columns.
 
@@ -248,7 +253,7 @@ class DataFrameTransform:
 
 class DataTransform:
     """
-    A class to transform the datatype of dataframe columns.
+    A class to transform the datatype of dataframe columns. Initialize with a pandas DataFrame.
 
     Attributes:
         df (pd.DataFrame): The dataframe to work with.
@@ -271,12 +276,15 @@ class DataTransform:
             try:
                 # Attempt to change the column's dtype
                 self.df[column] = self.df[column].astype(dtype)
-                print(f"✓ Successfully changed '{column}' to {dtype}")
+                # print(f"✓ Successfully changed '{column}' to {dtype}")
             except Exception as e:
                 print(f"X Error changing '{column}' to {dtype}: {e}")
         return self.df
 
 class DataFrameInfo:
+    """
+    Initialize with a pandas DataFrame (and column for specific methods) to get info about.
+    """
     def __init__(self, df, df_column=None):
         self.df = df
         self.df_column = df_column if df_column is not None else df.columns
@@ -324,12 +332,11 @@ class DataFrameInfo:
             'PercentageNull': np.round(percentnull.values, 2)
         })
         return null_df
-    
-    def nullpercent(self):
-        pass
 
     def range(self):
-        
+        """
+        Prints the range of specified column.
+        """
         dfcol = self.df_column
         max = max(dfcol)
         min = min(dfcol)
@@ -392,6 +399,9 @@ class DataFrameInfo:
         return summary_df
 
 class Plotter:
+    """
+    Initialize with a pandas DataFrame to plot.
+    """
     def __init__(self, df):
         self.df = df
 
@@ -403,7 +413,7 @@ class Plotter:
         Parameters:
         - bins (int): Number of bins for the histograms (applies only if plot_type='hist').
         - plot_type (str): Type of plot - 'hist' for histograms (default), 'scatter' for scatterplots.
-        - columns (list): List of numeric columns to plot. If None, all numeric columns are plotted.
+        - columns (list): Optional list of numeric columns to plot. If None, all numeric columns are plotted.
         - z_threshold (float): Z-score threshold for detecting outliers (applies to scatterplots).
 
         Returns:
@@ -463,7 +473,6 @@ class Plotter:
                 plt.title(f"Scatterplot of '{col}'", fontsize=12)
                 plt.xlabel("Index", fontsize=10)
                 plt.ylabel(col, fontsize=10)
-                plt.legend()
 
         plt.tight_layout()
         plt.show()

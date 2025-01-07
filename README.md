@@ -1,6 +1,6 @@
 # Exploratory Data Analysis Exercise
 
-The aim of this project is to hone my skills in EDA by working on a sample database end-to-end:
+The aim of this project is to hone my skills in EDA by working on a sample database (retail website) end-to-end:
 
 * Establishing a connection with an AWS RDS with secure credentials
 * Saving data to a local .csv
@@ -12,8 +12,15 @@ The aim of this project is to hone my skills in EDA by working on a sample datab
     * removing outliers to reduce biases
     * removing overly correlated columns
 
-All of the above is achieved using neatly constructed python classes and methods in `db_utils.py`.
+All of the above is achieved using neatly constructed python classes and methods in `db_utils.py` and some public libraries.
 
+I then perform EDA on the cleaned dataset, answering questions that management/exec might ask their data analysts.
+## Demo
+You can view a sample of my data analysis by opening my data_vis.ipynb in NBViewer by [clicking here](https://nbviewer.org/github/kiprenzo/exploratory-data-analysis---online-shopping-in-retail986/blob/main/data_vis.ipynb).
+
+Alternatively, if you'd like to only see the tidy outputs without the code, you can download and view the `data_vis.html` file in your browser.
+
+You can likewise see the decision making behind my data cleaning by opening `dataplay.ipynb` in NBViewer by [clicking here](https://nbviewer.org/github/kiprenzo/exploratory-data-analysis---online-shopping-in-retail986/blob/main/dataplay.ipynb).
 ## Requirements
 
 **Important:** in order to use `RDSDatabaseConnector`, you must have the necessary credentials to connect to an AWS RDS db and store them in a `credentials.yaml` file in a dictionary format:
@@ -32,17 +39,26 @@ All of the above is achieved using neatly constructed python classes and methods
 - [matplotlib](https://github.com/matplotlib/matplotlib) - run `pip install matplotlib`
 - [scikit-learn](https://github.com/scikit-learn/scikit-learn) - run `pip install scikit-learn`
 - [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) - run `pip install sqlalchemy`
+- [Plotly](https://plotly.com/python/) - run `pip install plotly`
+- [Missingno](https://github.com/ResidentMario/missingno) - run `pip install missingno`
 
-## Usage
+Note: you can chain together space-separated modules `pip install module1 module2` so if you'd like, run:
+```bash
+pip install pandas pyYAML numpy seaborn matplotlib scikit-learn sqlalchemy plotly missingno
+```
 
-`db_utils.py` has many reusable classes, useful for EDA.  
---TODO expand
+## File Structure / Usage
+
+1. `db_utils.py` - this stores the reusable classes and methods, useful for any EDA project.
+3. `data_vis` - a Jupyter notebook & tidy .html counterpart. This is a example of a report/investigation answering questions about the data.
+4. `dataplay` - a Jupyter notebook and tidy-ish .html counterpart. This explains the ideology and decision-making behind the data cleaning steps taken to produce a clean pandas dataframe.
+1. `data_dictionary.md` - a handy description of each column in the sample dataset. This is all the 'domain knowledge' I had access to during this project.
 
 ## License
  
 The MIT License (MIT)
 
-Copyright (c) 2015 Chris Kibble
+Copyright (c) 2025 Kipras Varanavicius
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
