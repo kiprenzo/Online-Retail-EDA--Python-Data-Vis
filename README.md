@@ -22,7 +22,7 @@ You can view a sample of my data analysis by opening my data_vis.ipynb in NBView
 
 Alternatively, if you'd like to only see the tidy outputs without the code, you can download and view the `data_vis.html` file in your browser.
 
-You can likewise see the decision making behind my data cleaning by opening `dataplay.ipynb` in NBViewer by [clicking here](https://nbviewer.org/github/kiprenzo/exploratory-data-analysis---online-shopping-in-retail986/blob/main/dataplay.ipynb).
+You can likewise see the decision making behind my data cleaning by opening `dataplay.ipynb` in NBViewer by [clicking here](https://nbviewer.org/github/kiprenzo/Online-Retail-EDA--Python-Data-Vis/blob/main/dataplay.ipynb).
 ## Requirements
 
 **Important:** in order to use `RDSDatabaseConnector`, you must have the necessary credentials to connect to an AWS RDS db and store them in a `credentials.yaml` file in a dictionary format:
